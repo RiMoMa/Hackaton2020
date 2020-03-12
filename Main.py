@@ -57,10 +57,11 @@ DF_Candidates = pd.read_csv('DataHackaton/Candidates2.csv',
 
 
 Remover_innecesarios = ['email',
-'first_name',
-'last_name',
-'phone',
-'identification_number']
+                        'first_name',
+                        'last_name',
+                        'phone',
+                        'identification_number'
+                        ]
 
 
 DF_Candidates = DF_Candidates.drop(Remover_innecesarios,axis=1)
@@ -154,15 +155,12 @@ DF_Vacants2 = DF_Vacants2.set_index(['id'])
 
 
 
-########
-
-
 ######### PARA: STAGES.CSV ##########
 
 
 Stages_cols = [
-         'id',
-         'title',
+    'id',
+    'title',
     'send_sms',
     'send_email',
     'send_call',
@@ -185,19 +183,109 @@ DF_Stages = pd.read_csv('DataHackaton/Stages2.csv',
                  names=Stages_cols)
 
 
-Remover_innecesarios = ['salary_type',
-                        'created_at',
-                        'publish_date',
-                        'expiration_date',
-                        'number_of_quotas'
+Remover_innecesarios = ['id',
+                        'title',
+                        'send_sms',
+                        'send_email',
+                        'send_call',
+                        'stage_type',
+                        'vacant_id',
+                        'stage_order'
+
                         ]
 
 
-DF_Vacants2 = DF_Vacants.drop(Remover_innecesarios,axis=1)
-DF_Vacants2 = DF_Vacants2.set_index(['id'])
+DF_Stages2 = DF_Stages.drop(Remover_innecesarios,axis=1)
+DF_Stages2 = DF_Stages2.set_index(['vacant_id'])## ojo, vacant_id
 
 
-### Generar relaciones entre los datos
+
+
+
+
+######### PARA: Applications.CSV ##########
+
+
+Applications_cols = [
+    'id',
+    'vacant_id',
+    'candidate_id',
+    'created_at',
+    'status',
+    'discard_type'
+]
+
+
+
+text = open("DataHackaton/Applications.csv", "r")
+text = ''.join([i for i in text]) \
+    .replace("false", "False")\
+    .replace("null","None")
+x = open("DataHackaton/Applications2.csv","w")
+x.writelines(text)
+x.close()
+
+DF_Applications = pd.read_csv('DataHackaton/Applications2.csv',
+                 names=Stages_cols)
+
+
+Remover_innecesarios = [#'id',
+                        'vacant_id',
+                        'candidate_id',
+                        #'created_at',
+                        'status',
+                        'discard_type'
+                        ]
+
+
+DF_Applications2 = DF_Applications.drop(Remover_innecesarios,axis=1)
+DF_Applications2 = DF_Applications2.set_index(['id'])
+
+
+########
+
+
+######### PARA: ApplicationStages.CSV ##########
+
+
+Stages_cols = ['id',
+               'stage_id',
+               'application_id',
+               'created_at',
+               'status'
+
+               ]
+
+text = open("DataHackaton/ApplicationStages.csv", "r")
+text = ''.join([i for i in text]) \
+    .replace("false", "False") \
+    .replace("null", "None")
+x = open("DataHackaton/ApplicationStages2.csv", "w")
+x.writelines(text)
+x.close()
+
+DF_ApplicationStages = pd.read_csv('DataHackaton/ApplicationStages2.csv',
+                              names=Stages_cols)
+
+Remover_innecesarios = ['id',
+               'stage_id',
+               'application_id',
+               'created_at',
+               'status'
+               ]
+DF_ApplicationStages2 = DF_ApplicationStages.drop(Remover_innecesarios, axis=1)
+DF_ApplicationStages2 = DF_ApplicationStages2.set_index(['id'])
+
+########
+
+
+
+
+
+
+
+
+### Generar relaciones entre los datos -- Stage con id Vacant--
 
 
 ####### AQUI VA LA APLICACION DE LA BOLSA DE PALABRAS #######

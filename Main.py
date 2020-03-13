@@ -1,4 +1,5 @@
 ## organizar datos en pandas
+import os
 import numpy as np
 import ast
 from unidecode import unidecode
@@ -12,6 +13,7 @@ pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 # Load the regular expression library
 import re# Remove punctuation
+import num2words
 from sklearn.feature_extraction.text import CountVectorizer
 ##### PREPROCESAMIENTO #############
 ######### PARA: CANDIDATES.CSV ##########
@@ -33,6 +35,7 @@ Candidates_cols = ['id',
          'profile_description',
          'without_experience', #binaria
          'without_studies', #binaria
+        'sectors',
          'title_or_profession', #Caracteres
          'social_media_links',
          'available_to_move',# binaria
@@ -43,24 +46,26 @@ Candidates_cols = ['id',
          'has_video',#Imágenes
          ]
 
+if not(os.path.exists('DataHackaton/Candidates2.csv')):
 
-text = open("DataHackaton/Candidates.csv", "r")
-text = ''.join([i for i in text]) \
-    .replace("false", "False")\
-    .replace("null","0")
-x = open("DataHackaton/Candidates2.csv","w")
-x.writelines(text)
-x.close()
+    text = open("DataHackaton/Candidates.csv", "r")
+    text = ''.join([i for i in text]) \
+        .replace("false", "False")\
+        .replace("null","0")
+    x = open("DataHackaton/Candidates2.csv","w")
+    x.writelines(text)
+    x.close()
 
 DF_Candidates = pd.read_csv('DataHackaton/Candidates2.csv',
                  names=Candidates_cols)
 
 
 Remover_innecesarios = ['email',
-                        'first_name',
+                        #'first_name',
                         'last_name',
                         'phone',
-                        'identification_number'
+                        'identification_number',
+                        'identification_type',
                         ]
 
 
@@ -79,7 +84,7 @@ for n in range(DF_Candidates.index.stop):
         edad = np.nan
     elif float(DF_Candidates['birthdate'][n][0:4])>time_min and float(DF_Candidates['birthdate'][n][0:4])<time_max:
         edad = pd.Timestamp.now() - pd.Timestamp(DF_Candidates['birthdate'][n])
-        edad = edad.days
+        edad = edad.days/365
 
     else:
         #print(n)
@@ -127,14 +132,15 @@ Vacants_cols = [
          'number_of_quotas'
          ]
 
+if not(os.path.exists("DataHackaton/Vacants2.csv")):
 
-text = open("DataHackaton/Vacants.csv", "r")
-text = ''.join([i for i in text]) \
-    .replace("false", "False")\
-    .replace("null","None")
-x = open("DataHackaton/Vacants2.csv","w")
-x.writelines(text)
-x.close()
+    text = open("DataHackaton/Vacants.csv", "r")
+    text = ''.join([i for i in text]) \
+        .replace("false", "False")\
+        .replace("null","None")
+    x = open("DataHackaton/Vacants2.csv","w")
+    x.writelines(text)
+    x.close()
 
 DF_Vacants = pd.read_csv('DataHackaton/Vacants2.csv',
                  names=Vacants_cols)
@@ -170,27 +176,24 @@ Stages_cols = [
 
          ]
 
+if not(os.path.exists("DataHackaton/Stages2.csv")):
 
-text = open("DataHackaton/Stages.csv", "r")
-text = ''.join([i for i in text]) \
-    .replace("false", "False")\
-    .replace("null","None")
-x = open("DataHackaton/Stages2.csv","w")
-x.writelines(text)
-x.close()
+    text = open("DataHackaton/Stages.csv", "r")
+    text = ''.join([i for i in text]) \
+        .replace("false", "False")\
+        .replace("null","None")
+    x = open("DataHackaton/Stages2.csv","w")
+    x.writelines(text)
+    x.close()
 
 DF_Stages = pd.read_csv('DataHackaton/Stages2.csv',
                  names=Stages_cols)
 
 
-Remover_innecesarios = ['id',
-                        'title',
+Remover_innecesarios = [
                         'send_sms',
                         'send_email',
-                        'send_call',
-                        'stage_type',
-                        'vacant_id',
-                        'stage_order'
+                        'send_call'
 
                         ]
 
@@ -216,25 +219,25 @@ Applications_cols = [
 ]
 
 
-
-text = open("DataHackaton/Applications.csv", "r")
-text = ''.join([i for i in text]) \
-    .replace("false", "False")\
-    .replace("null","None")
-x = open("DataHackaton/Applications2.csv","w")
-x.writelines(text)
-x.close()
+if not(os.path.exists("DataHackaton/Applications2.csv")):
+    text = open("DataHackaton/Applications.csv", "r")
+    text = ''.join([i for i in text]) \
+        .replace("false", "False")\
+        .replace("null","None")
+    x = open("DataHackaton/Applications2.csv","w")
+    x.writelines(text)
+    x.close()
 
 DF_Applications = pd.read_csv('DataHackaton/Applications2.csv',
-                 names=Stages_cols)
+                 names=Applications_cols)
 
 
 Remover_innecesarios = [#'id',
-                        'vacant_id',
-                        'candidate_id',
-                        #'created_at',
-                        'status',
-                        'discard_type'
+                        #'vacant_id',
+                      #  'candidate_id',
+                        'created_at'
+                      #  'status',
+                      #  'discard_type'
                         ]
 
 
@@ -256,26 +259,28 @@ Stages_cols = ['id',
 
                ]
 
-text = open("DataHackaton/ApplicationStages.csv", "r")
-text = ''.join([i for i in text]) \
-    .replace("false", "False") \
-    .replace("null", "None")
-x = open("DataHackaton/ApplicationStages2.csv", "w")
-x.writelines(text)
-x.close()
+if not(os.path.exists("DataHackaton/ApplicationStages2.csv")):
+
+    text = open("DataHackaton/ApplicationStages.csv", "r")
+    text = ''.join([i for i in text]) \
+        .replace("false", "False") \
+        .replace("null", "None")
+    x = open("DataHackaton/ApplicationStages2.csv", "w")
+    x.writelines(text)
+    x.close()
 
 DF_ApplicationStages = pd.read_csv('DataHackaton/ApplicationStages2.csv',
                               names=Stages_cols)
 
-Remover_innecesarios = ['id',
-               'stage_id',
-               'application_id',
+Remover_innecesarios = [#'id',
+            #   'stage_id',
+            #   'application_id',
                'created_at',
-               'status'
+             #  'status'
                ]
 DF_ApplicationStages2 = DF_ApplicationStages.drop(Remover_innecesarios, axis=1)
-DF_ApplicationStages2 = DF_ApplicationStages2.set_index(['id'])
-
+DF_ApplicationStages2 = DF_ApplicationStages2.set_index(['application_id'])
+DF_ApplicationStages2 = DF_ApplicationStages2.sort_index(axis = 0)
 ########
 
 
@@ -291,9 +296,9 @@ DF_ApplicationStages2 = DF_ApplicationStages2.set_index(['id'])
 ####### AQUI VA LA APLICACION DE LA BOLSA DE PALABRAS #######
 
 DF_Vacants2['paper_text_processed'] = DF_Candidates2['studies'].map(lambda x: re.sub('[,\.!?·:#()]',' ', str(x)))# Convert the titles to lowercase
-DF_Vacants2['paper_text_processed'] = DF_Vacants2['paper_text_processed'].map(lambda x: re.sub('[&]','', str(x)))
-DF_Vacants2['paper_text_processed'] = DF_Vacants2['paper_text_processed'].map(lambda x: re.sub('[;]','', str(x)))
-DF_Vacants2['paper_text_processed'] = DF_Vacants2['paper_text_processed'].map(lambda x: re.sub('<[^<]+?>',' ', str(x)))
+DF_Vacants2['paper_text_processed'] = DF_Vacants2['paper_text_processed'].map(lambda x: re.sub('[&]','', str(x)))# eliminar &
+DF_Vacants2['paper_text_processed'] = DF_Vacants2['paper_text_processed'].map(lambda x: re.sub('[;]','', str(x)))#eliminar ;
+DF_Vacants2['paper_text_processed'] = DF_Vacants2['paper_text_processed'].map(lambda x: re.sub('<[^<]+?>',' ', str(x)))#eliminar HTML
 DF_Vacants2['paper_text_processed'] = DF_Vacants2['paper_text_processed'].apply(unidecode)
 DF_Vacants2['paper_text_processed'] = DF_Vacants2['paper_text_processed'].map(lambda x: re.sub('{|acute|}','', str(x)))
 DF_Vacants2['paper_text_processed'] = DF_Vacants2['paper_text_processed'].map(lambda x: re.sub('{|tilde|}','', str(x)))

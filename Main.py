@@ -15,36 +15,40 @@ pd.set_option('display.width', 1000)
 import re# Remove punctuation
 import num2words
 from sklearn.feature_extraction.text import CountVectorizer
+from GenderIdentify import GenderIdentify
+from gender_features import gender_features
+import math
+
 ##### PREPROCESAMIENTO #############
 ######### PARA: CANDIDATES.CSV ##########
 
 
 Candidates_cols = ['id',
-         'email',
-         'first_name',
-         'last_name',
-         'phone',
-         'birthdate',
-         'gender',
-         'identification_type',
-         'identification_number',
+                   'email',
+                   'first_name',
+                   'last_name',
+                   'phone',
+                   'birthdate',
+                   'gender',
+                   'identification_type',
+                   'identification_number',
          'country_birth',
          'city',
          'education_level',
          'salary',
          'profile_description',
-         'without_experience', #binaria
-         'without_studies', #binaria
-        'sectors',
-         'title_or_profession', #Caracteres
-         'social_media_links',
-         'available_to_move',# binaria
-         'civil_status',#multiclase
-         'studies',# Caracteres
-         'experiences',# arreglo tipo "company":"Fabrica 1","position":"Nombre posicion en 1","start_date":"time_stamp","end_date":"2010-10-01", "at_present":binaria True False,"description":"","Job_functions":,end_date,"withdrawal_reason":null,"other_withdrawal_reason":null}
+         'without_experience',  #binaria
+         'without_studies',  #binaria
+         'title_or_profession',  #Caracteres
+         'available_to_move',  # binaria
+         'civil_status',  #multiclase
+         'has_video',  # Imágenes
+         'studies',  # Caracteres
+         'experiences',
+                   # arreglo tipo "company":"Fabrica 1","position":"Nombre posicion en 1","start_date":"time_stamp","end_date":"2010-10-01", "at_present":binaria True False,"description":"","Job_functions":,end_date,"withdrawal_reason":null,"other_withdrawal_reason":null}
+
          'psy_tests',
-         'has_video',#Imágenes
-         ]
+                   ]
 
 if not(os.path.exists('DataHackaton/Candidates2.csv')):
 
@@ -70,6 +74,7 @@ Remover_innecesarios = ['email',
 
 
 DF_Candidates = DF_Candidates.drop(Remover_innecesarios,axis=1)
+DF_Candidates['salary'] = DF_Candidates['salary'].astype(str)
 
 ########### poner edad y reemplazar bird date por numero de dias ############
 
@@ -77,20 +82,34 @@ time_min = pd.Timestamp.min.year
 time_max = pd.Timestamp.max.year
 print(time_max)
 print(time_min)
+Gd = GenderIdentify()
 for n in range(DF_Candidates.index.stop):
    # print(DF_Candidates['birthdate'][n])
-
+    ## Calcular Edad
     if DF_Candidates['birthdate'][n] is float(np.nan):
-        edad = np.nan
+        edad = 'NoEdad'
     elif float(DF_Candidates['birthdate'][n][0:4])>time_min and float(DF_Candidates['birthdate'][n][0:4])<time_max:
         edad = pd.Timestamp.now() - pd.Timestamp(DF_Candidates['birthdate'][n])
-        edad = edad.days/365
+        edad = num2words.num2words( np.round( edad.days/365 ),lang = 'es')
 
     else:
         #print(n)
-        edad = np.nan
+        edad = 'NoEdad'
     DF_Candidates.at[n, 'birthdate'] = edad
 
+      ## completar Genero
+    if DF_Candidates['gender'][n] is float(np.nan):
+        genderClassify = Gd.classify(gender_features(DF_Candidates['first_name'][n]))
+        DF_Candidates.at[n, 'gender'] = genderClassify
+
+
+
+    if math.isnan(float(DF_Candidates['salary'][n])):
+        SalaryToWord = 'NoSalary'
+    else:
+        SalaryToWord = num2words.num2words(DF_Candidates['salary'][n],lang = 'es')
+
+    DF_Candidates.at[n, 'salary'] = SalaryToWord
 
 DF_Candidates2 = DF_Candidates.rename(columns={'birthdate':'edad'})
 DF_Candidates2 = DF_Candidates2.set_index(['id'])

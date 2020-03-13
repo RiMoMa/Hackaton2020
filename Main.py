@@ -110,6 +110,19 @@ for n in range(DF_Candidates.index.stop):
         SalaryToWord = num2words.num2words(DF_Candidates['salary'][n],lang = 'es')
 
     DF_Candidates.at[n, 'salary'] = SalaryToWord
+    print(n)
+    try:
+        Psy_candidate = pd.DataFrame(ast.literal_eval(DF_Candidates['psy_tests'][n]))
+    except:
+       print('Psicometrica del candidato malformada')
+    PsyResultCa = []
+    for testP in range(len(Psy_candidate)):
+        # print(Psy_candidate['test_type'][testP] + str(np.round(int(Psy_candidate['psy_tests'][int(testP)][0]['percent']))))
+        PsyResultCa.append(
+            Psy_candidate['test_type'][testP] + str(np.round(int(Psy_candidate['psy_tests'][int(testP)][0]['percent']))))
+    PsyResultCa = " ".join(PsyResultCa)
+    DF_Candidates.at[n, 'psy_tests'] = PsyResultCa
+
 
 DF_Candidates2 = DF_Candidates.rename(columns={'birthdate':'edad'})
 DF_Candidates2 = DF_Candidates2.set_index(['id'])

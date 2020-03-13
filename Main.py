@@ -103,7 +103,7 @@ for n in range(DF_Candidates.index.stop):
         DF_Candidates.at[n, 'gender'] = genderClassify
 
 
-
+  ##completar salario
     if math.isnan(float(DF_Candidates['salary'][n])):
         SalaryToWord = 'NoSalary'
     else:

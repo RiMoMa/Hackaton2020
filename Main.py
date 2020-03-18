@@ -18,6 +18,17 @@ from CleanDataPreProcessed import cleanDataFromDF
 from sklearn.feature_extraction.text import CountVectorizer
 from GenderIdentify import GenderIdentify
 from gender_features import gender_features
+from time import time
+
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.decomposition import NMF, LatentDirichletAllocation
+from sklearn.datasets import fetch_20newsgroups
+
+n_samples = 2000
+n_features = 1000
+n_components = 10
+n_top_words = 20
+
 import math
 import nltk
 nltk.download('names')
@@ -182,23 +193,91 @@ DF_Candidates2 = DF_Candidates.iloc[0:100]
 DF_Candidates2 = DF_Candidates2.set_index(['id'])
 DF_Candidates2 = DF_Candidates2.sort_index(axis = 0)
 DF_Candidates2 = DF_Candidates2.drop('has_video',axis=1)
-DF_Candidates2 = cleanDataFromDF(DF_Candidates2)
+# cleanDataFromDF
+DF_Candidates2 = cleanDataFromDF(DF_Candidates2) ### Este no debe ir en la version final
+#DF_Candidates = cleanDataFromDF(DF_Candidates) ## Este debe ir en la version final
+
+DF_Candidates2 = DF_Candidates2[DF_Candidates2.columns[:]].apply(
+    lambda x: ' '.join(x.dropna().astype(str)),
+    axis=1
+)
+
+DF_Candidates2 = np.array(DF_Candidates2)
 
 count_vectorizer = CountVectorizer(stop_words=stop_words)# crea un modelo
 count_data = count_vectorizer.fit_transform(DF_Candidates2)# crea un histogrma de ocurrencia en base al vocabulario y transforma la data
 plot_common_words(count_data, count_vectorizer,0,80)# ver palabras comunes
 
 #Todo : POner los modelos de topicos
+# que ya más o menos estan, se usan varios hasta el final, solo candidates 2
 ### aqui se puede establecer un modelo ya tambien generar el Tf-idtf #
 # la pregunta es que modelo es mejor NMF, LDA, usando Tf o usando TF-IDF????
+data_samples = DF_Candidates2
 
 
-DF_Candidates = cleanDataFromDF(DF_Candidates)
+# Use tf-idf features for NMF.
+print("Extracting tf-idf features for NMF...")
+tfidf_vectorizer = TfidfVectorizer(max_df=0.95, min_df=2,
+                                   max_features=n_features,
+                                   stop_words=stop_words)
+t0 = time()
+tfidf = tfidf_vectorizer.fit_transform(data_samples)
+print("done in %0.3fs." % (time() - t0))
 
-DF_Candidates2 = DF_Candidates2[DF_Candidates2.columns[:]].apply(
-    lambda x: ' '.join(x.dropna().astype(str)),
-    axis=1
-)
+# Use tf (raw term count) features for LDA.
+print("Extracting tf features for LDA...")
+tf_vectorizer = CountVectorizer(max_df=0.95, min_df=2,
+                                max_features=n_features,
+                                stop_words=stop_words)
+t0 = time()
+tf = tf_vectorizer.fit_transform(data_samples)
+print("done in %0.3fs." % (time() - t0))
+print()
+
+# Fit the NMF model
+print("Fitting the NMF model (Frobenius norm) with tf-idf features, "
+      "n_samples=%d and n_features=%d..."
+      % (n_samples, n_features))
+t0 = time()
+nmf = NMF(n_components=n_components, random_state=1,
+          alpha=.1, l1_ratio=.5).fit(tfidf)
+print("done in %0.3fs." % (time() - t0))
+
+print("\nTopics in NMF model (Frobenius norm):")
+tfidf_feature_names = tfidf_vectorizer.get_feature_names()
+print_top_words(nmf, tfidf_feature_names, n_top_words)
+
+# Fit the NMF model
+print("Fitting the NMF model (generalized Kullback-Leibler divergence) with "
+      "tf-idf features, n_samples=%d and n_features=%d..."
+      % (n_samples, n_features))
+t0 = time()
+nmf = NMF(n_components=n_components, random_state=1,
+          beta_loss='kullback-leibler', solver='mu', max_iter=1000, alpha=.1,
+          l1_ratio=.5).fit(tfidf)
+print("done in %0.3fs." % (time() - t0))
+
+print("\nTopics in NMF model (generalized Kullback-Leibler divergence):")
+tfidf_feature_names = tfidf_vectorizer.get_feature_names()
+print_top_words(nmf, tfidf_feature_names, n_top_words)
+
+print("Fitting LDA models with tf features, "
+      "n_samples=%d and n_features=%d..."
+      % (n_samples, n_features))
+lda = LatentDirichletAllocation(n_components=n_components, max_iter=5,
+                                learning_method='online',
+                                learning_offset=50.,
+                                random_state=0)
+t0 = time()
+lda.fit(tfidf)
+print("done in %0.3fs." % (time() - t0))
+
+print("\nTopics in LDA model:")
+tf_feature_names = tf_vectorizer.get_feature_names()
+print_top_words(lda, tf_feature_names, n_top_words)
+
+
+
 
 
 
@@ -266,8 +345,29 @@ Remover_innecesarios = ['salary_type',
 
 
 DF_Vacants2 = DF_Vacants.drop(Remover_innecesarios,axis=1)
-DF_Vacants2 = DF_Vacants2.set_index(['id'])
+DF_Vacants2 = DF_Vacants2.set_index(['id']) ###vacant ID
+DF_Vacants2 = DF_Vacants2.sort_index(axis = 0)
 
+### mini prueba ####
+
+DF_Vacants2 = DF_Vacants2.iloc[0:100]## quitar esta linea en el final o hacer un kfold aqui
+DF_Vacants2 = DF_Candidates2.set_index(['id'])
+DF_Vacants2 = DF_Candidates2.sort_index(axis = 0)
+DF_Vacants2 = cleanDataFromDF(DF_Vacants2) ### Este no debe ir en la version final
+#DF_Stages2 = cleanDataFromDF(DF_Stages) ## Este debe ir en la version final
+
+DF_Vacants2 = DF_Vacants2[DF_Vacants2.columns[:]].apply(
+    lambda x: ' '.join(x.dropna().astype(str)),
+    axis=1
+)
+
+DF_Vacants2 = np.array(DF_Vacants2)
+
+
+
+## $$$
+
+## RELACIONAR LOS DATOS y HACER kfold
 
 
 
@@ -311,7 +411,6 @@ Remover_innecesarios = [
 
 DF_Stages2 = DF_Stages.drop(Remover_innecesarios,axis=1)
 DF_Stages2 = DF_Stages2.set_index(['vacant_id'])## ojo, vacant_id
-
 
 
 
@@ -393,9 +492,15 @@ DF_ApplicationStages2 = DF_ApplicationStages.drop(Remover_innecesarios, axis=1)
 DF_ApplicationStages2 = DF_ApplicationStages2.set_index(['application_id'])
 DF_ApplicationStages2 = DF_ApplicationStages2.sort_index(axis = 0)
 ########
+### Borrar aplication stages deleted ###
 
-
-
+index_b=DF_ApplicationStages2['status'].str.find('deleted')==0
+indexNumber = np.arange(len(index_b))
+indexNumber =indexNumber[index_b]
+DF_ApplicationStages2=DF_ApplicationStages2.drop(indexNumer,axis=0) ## Ya sin los deleted
+## borrar del stage usando el stage Id y borrar del application usando los application ID
+StagesID_clean = DF_ApplicationStages2['stage_id'].iloc[indexNumber]
+indexNumer[index_b]
 
 
 
